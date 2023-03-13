@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ContinuousTimer</string>
+
+    <string name="channel_name">Time Table</string>
+    <string name="channel_description">Time Table Display </string>
+    <string name="channel_id">tt</string>
+</resources>
