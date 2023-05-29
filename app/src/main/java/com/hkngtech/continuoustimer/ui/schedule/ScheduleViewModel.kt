@@ -22,6 +22,11 @@ class ScheduleViewModel @Inject constructor(private val roomRepository: RoomRepo
 
     var serviceIsNotRunning = true
 
+    /**
+     * To start service after asking for notification permission or battery optimization
+     */
+    var scheduleIdCountdown = -1
+
     suspend fun insert(): Int{
         return withContext(viewModelScope.coroutineContext){
             roomRepository.insertSchedule(schedule,breakInBetween)

@@ -1,7 +1,11 @@
 package com.hkngtech.continuoustimer.ui.countdown
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.Ringtone
@@ -35,17 +39,25 @@ class CountDownService : Service() {
     var countDownTimer : CountDownTimer? = null
     var notifcationBuilder : NotificationCompat.Builder? =null
     var notificationManager : NotificationManagerCompat? = null
+    lateinit var receiver: BroadcastReceiver
+    lateinit var intentAcknowledged: PendingIntent
 
     var tableid = 0
+    var acknowledged = false
+
+    /**
+     * To show high priority notification only when each tasks are started for first time
+     */
+    var firstInTick = false
 
     @Inject lateinit var roomRepository: RoomRepository
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.e("START","START $intent")
         if (intent != null) {
             notifcationBuilder = NotificationCompat.Builder(this@CountDownService,getString(R.string.channel_id))
                 .setSmallIcon(R.drawable.ic_info)
                 .setOnlyAlertOnce(true)
+
             notificationManager = NotificationManagerCompat.from(this)
             startForeground(23, notifcationBuilder!!.build())
             tableid = intent.getIntExtra("schedule_id",-1)
@@ -57,14 +69,20 @@ class CountDownService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        receiver = object : BroadcastReceiver(){
+            override fun onReceive(context: Context?, intent: Intent?) {
 
+            }
+        }
+        val intent = Intent(this,receiver::class.java).apply {
+            putExtra(ACKNOWLEDGED,true)
+        }
+        intentAcknowledged =
+            PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
     }
-
 
     @OptIn(DelicateCoroutinesApi::class)
     fun countdown(){
-
-
         GlobalScope.launch(Dispatchers.IO) {
             val taskdata = roomRepository.getAllTasksService(tableid)
             withContext(Dispatchers.Main){
@@ -77,30 +95,19 @@ class CountDownService : Service() {
 
     fun countdowneach(taskdata : List<Tasks>, cnt : Int, total : Int){
         val time = taskdata[cnt].time.toLong() *60 *1000
-        val broadcaster = LocalBroadcastManager.getInstance(this@CountDownService)
-        val intent = Intent("com.hkngtech.timer.countdown")
         countDownTimer = object : CountDownTimer(time,1000){
+            @SuppressLint("MissingPermission")
             override fun onTick(p0: Long) {
                 Log.e("COUNT",p0.toString())
+//                if(firstInTick){
+//                    firstInTick = false
+//                    notificationBuilder()
+//                    notifcationBuilder?.priority = NotificationCompat.PRIORITY_HIGH
+//                }else
+//                    notifcationBuilder?.priority = NotificationCompat.PRIORITY_DEFAULT
                 notifcationBuilder?.setContentTitle(Constants.miltotime(p0))
                 notifcationBuilder?.setContentText(taskdata[cnt].task)
-                if (ActivityCompat.checkSelfPermission(
-                        this@CountDownService,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return
-                }
                 notificationManager?.notify(23,notifcationBuilder!!.build())
-                intent.putExtra("time",p0.toString())
-                broadcaster.sendBroadcast(intent)
                 LiveDataTimer.timerUpdate.postValue(TimerUpdate(p0.toString()))
             }
 
@@ -124,35 +131,24 @@ class CountDownService : Service() {
 
                 }
                 countDownTimer = object : CountDownTimer(5000,1000){
+                    @SuppressLint("MissingPermission")
                     override fun onTick(p0: Long) {
                         Log.e("COUNT",p0.toString())
+//                        if(firstInTick){
+//                            firstInTick = false
+//                            notificationBuilderWithAction()
+//                            notifcationBuilder?.priority = NotificationCompat.PRIORITY_HIGH
+//                        }else
+//                            notifcationBuilder?.priority = NotificationCompat.PRIORITY_DEFAULT
                         if(cnt+1<total) {
                             notifcationBuilder?.setContentTitle(Constants.miltotime(p0))
                             notifcationBuilder?.setContentText("Next Task ${taskdata[cnt + 1].task}")
-                            if (ActivityCompat.checkSelfPermission(
-                                    this@CountDownService,
-                                    Manifest.permission.POST_NOTIFICATIONS
-                                ) != PackageManager.PERMISSION_GRANTED
-                            ) {
-                                // TODO: Consider calling
-                                //    ActivityCompat#requestPermissions
-                                // here to request the missing permissions, and then overriding
-                                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                                //                                          int[] grantResults)
-                                // to handle the case where the user grants the permission. See the documentation
-                                // for ActivityCompat#requestPermissions for more details.
-                                return
-                            }
                             notificationManager?.notify(23, notifcationBuilder!!.build())
-                            intent.putExtra("time", p0.toString())
-                            broadcaster.sendBroadcast(intent)
                             LiveDataTimer.timerUpdate.postValue(TimerUpdate(p0.toString()))
                         }else{
                             notifcationBuilder?.setContentTitle(Constants.miltotime(p0))
                             notifcationBuilder?.setContentText("It's Over! you did it")
                             notificationManager?.notify(23, notifcationBuilder!!.build())
-                            intent.putExtra("time", p0.toString())
-                            broadcaster.sendBroadcast(intent)
                             LiveDataTimer.timerUpdate.postValue(TimerUpdate(p0.toString()))
                         }
                     }
@@ -176,16 +172,14 @@ class CountDownService : Service() {
                     }
 
                 }
-                intent.putExtra("time","5000")
-                broadcaster.sendBroadcast(intent)
                 LiveDataTimer.timerUpdate.postValue(TimerUpdate("5000"))
+                firstInTick = true
                 countDownTimer?.start()
             }
 
         }
-        intent.putExtra("time",time.toString())
-        broadcaster.sendBroadcast(intent)
         LiveDataTimer.timerUpdate.postValue(TimerUpdate(time.toString()))
+        firstInTick = true
         countDownTimer?.start()
     }
 
@@ -193,6 +187,22 @@ class CountDownService : Service() {
         return null
     }
 
+    private fun notificationBuilder(){
+        notifcationBuilder = NotificationCompat.Builder(this@CountDownService,getString(R.string.channel_id))
+            .setSmallIcon(R.drawable.ic_info)
+            .setOnlyAlertOnce(true)
+    }
 
+    private fun notificationBuilderWithAction(){
+        notifcationBuilder = NotificationCompat.Builder(this@CountDownService,getString(R.string.channel_id))
+            .setSmallIcon(R.drawable.ic_info)
+            .setOnlyAlertOnce(true)
+            .addAction(R.drawable.ic_hand, ACKNOWLEDGE,intentAcknowledged)
+    }
+
+    companion object{
+        const val ACKNOWLEDGED = "acknowledged"
+        const val ACKNOWLEDGE = "Acknowledge"
+    }
 
 }

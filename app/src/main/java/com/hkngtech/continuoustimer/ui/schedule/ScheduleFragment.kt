@@ -1,5 +1,6 @@
 package com.hkngtech.continuoustimer.ui.schedule
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
@@ -7,15 +8,14 @@ import android.content.Context
 import android.content.Context.POWER_SERVICE
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.util.Log
 import android.view.View
-import androidx.core.content.ContextCompat.getSystemService
-import androidx.core.content.ContextCompat.startForegroundService
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
@@ -29,7 +29,6 @@ import com.hkngtech.continuoustimer.ui.base.BaseFragment
 import com.hkngtech.continuoustimer.ui.countdown.CountDownService
 import com.hkngtech.continuoustimer.ui.schedule.adapter.ScheduleAdapter
 import com.hkngtech.continuoustimer.utils.LiveDataTimer
-import com.hkngtech.continuoustimer.utils.logE
 import com.hkngtech.continuoustimer.utils.navigate
 import com.hkngtech.continuoustimer.utils.toast
 import dagger.hilt.android.AndroidEntryPoint
@@ -39,29 +38,23 @@ import kotlinx.coroutines.flow.collectLatest
 class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleBinding::inflate) {
 
     private val scheduleViewModel by viewModels<ScheduleViewModel>()
-    lateinit var receiver: BroadcastReceiver
     lateinit var observer: Observer<TimerUpdate>
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         createNotificationChannel()
-        receiver = object : BroadcastReceiver() {
-            override fun onReceive(p0: Context?, p1: Intent?) {
-                if (p1 != null) {
-                    val time = p1.getStringExtra("time").toString()
 
-                    binding.time.text = Constants.miltotime(time.toLong())
+        observer = Observer<TimerUpdate> {
+            if (it != null) {
+                val time = it.time
+
+                binding.time.text = Constants.miltotime(time.toLong())
 //                    val ms = String.format(Locale.US,
 //                        "%02d:%02d:%02d", time / 3600,
 //                        time % 3600 / 60, time % 60
 //                    )
-                }
             }
-        }
-
-        observer = Observer<TimerUpdate>{
-            "LIVE DATA ${it.time}".logE()
         }
 
         binding.recViewSchedule.layoutManager =
@@ -81,23 +74,22 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
                             )
                         )
                     } else if (which == 1) {
-                        if(scheduleViewModel.serviceIsNotRunning){
-                            if(isIgnoringBatteryOptimization()){
-                                Intent(requireContext(), CountDownService::class.java).apply {
-                                    putExtra("schedule_id", schedule.scheduleId)
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        requireActivity().startForegroundService(this)
-                                    } else
-                                        requireActivity().startService(this)
-                                    scheduleViewModel.serviceIsNotRunning = false
-                                }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            if (ContextCompat.checkSelfPermission(
+                                    requireContext(),
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                ) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                startServiceBatterOptimization()
+                            } else {
+                                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
-                        }else{
-                            "Timer is running".toast(requireContext())
+                        } else {
+                            startServiceBatterOptimization()
                         }
                     } else if (which == 2) {
                         lifecycleScope.launchWhenCreated {
-                           scheduleViewModel.delete(schedule.scheduleId)
+                            scheduleViewModel.delete(schedule.scheduleId)
                         }
                     }
                 }
@@ -105,27 +97,52 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
         }
     }
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                startServiceBatterOptimization()
+            } else {
+
+            }
+        }
+
     override fun onResume() {
         super.onResume()
-        LiveDataTimer.timerUpdate.observe(requireActivity(),observer)
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
-            receiver, IntentFilter(
-                IntentFilter("com.hkngtech.timer.countdown")
-            )
-        )
+        LiveDataTimer.timerUpdate.observe(requireActivity(), observer)
     }
 
     override fun onPause() {
         super.onPause()
         LiveDataTimer.timerUpdate.removeObserver(observer)
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver)
+    }
+
+    private fun startServiceForCountdown() {
+        if (scheduleViewModel.serviceIsNotRunning) {
+            Intent(requireContext(), CountDownService::class.java).apply {
+                putExtra("schedule_id", scheduleViewModel.scheduleIdCountdown)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    requireActivity().startForegroundService(this)
+                } else requireActivity().startService(this)
+                scheduleViewModel.serviceIsNotRunning = false
+            }
+        } else {
+            "Timer is running".toast(requireContext())
+        }
+    }
+
+    private fun startServiceBatterOptimization() {
+        if (isIgnoringBatteryOptimization()) {
+            startServiceForCountdown()
+        }
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
             val descriptionText = getString(R.string.channel_description)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val importance = NotificationManager.IMPORTANCE_HIGH
             val channel =
                 NotificationChannel(getString(R.string.channel_id), name, importance).apply {
                     description = descriptionText
@@ -145,7 +162,6 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
 //            intent.data = Uri.parse("package:$packageName")
             requireActivity().startActivity(intent)
             false
-        } else
-            true
+        } else true
     }
 }
