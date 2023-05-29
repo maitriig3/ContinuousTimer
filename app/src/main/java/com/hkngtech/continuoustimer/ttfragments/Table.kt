@@ -13,7 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.hkngtech.continuoustimer.R
 import com.hkngtech.continuoustimer.adapter.AddTaskRA
-import com.hkngtech.continuoustimer.data.local.entity.TimeTtaskData
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 import com.hkngtech.continuoustimer.databinding.FragmentTableBinding
 import com.hkngtech.continuoustimer.model.factory.TimeTableVMF
 import com.hkngtech.continuoustimer.model.repository.TimeTableRepository
@@ -53,7 +53,9 @@ class Table : Fragment(), AddTaskRA.OnClick {
                     if (timeTableVM.tableid == 0){
                         timeTableVM.insertTableName()
                         binding.recview.apply {
-                            addTaskRA.timeTtaskData = ArrayList<TimeTtaskData>().apply {add(TimeTtaskData(0,timeTableVM.tableid,"",""))}
+                            addTaskRA.timeTtaskData = ArrayList<TimeTtaskData>().apply {add(
+                                TimeTtaskData(0,timeTableVM.tableid,"","")
+                            )}
                             addTaskRA.tableid = timeTableVM.tableid
                             adapter = addTaskRA
                             layoutManager = GridLayoutManager(context1,1,

@@ -3,9 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <application
-        android:allowBackup="true"
+        android:name=".di.ContinuousTimerApplication"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -14,15 +16,11 @@
         android:theme="@style/Theme.ContinuousTimer"
         tools:targetApi="31">
         <service
-            android:name=".CountDown"
+            android:name=".ui.countdown.CountDownService"
             android:enabled="true"
             android:exported="false" />
 
-        <activity
-            android:name=".TimeTable"
-            android:exported="false" />
-        <activity
-            android:name=".Start"
+        <activity android:name=".ui.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

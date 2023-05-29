@@ -3,7 +3,7 @@ package com.hkngtech.continuoustimer.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.hkngtech.continuoustimer.data.local.entity.TimeTtaskData
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 import com.hkngtech.continuoustimer.databinding.TabletaskdisplayBinding
 
 class TableTaskRA(var timeTtaskData: ArrayList<TimeTtaskData>, val onClick: OnClick) : RecyclerView.Adapter<TableTaskRA.MyViewHolder>(){

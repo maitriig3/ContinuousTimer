@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.hkngtech.continuoustimer.R
-import com.hkngtech.continuoustimer.data.local.entity.TimeTtaskData
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 import com.hkngtech.continuoustimer.databinding.FragmentTableTaskBinding
 import com.hkngtech.continuoustimer.model.factory.TimeTableVMF
 import com.hkngtech.continuoustimer.model.repository.TimeTableRepository

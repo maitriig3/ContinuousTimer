@@ -2,9 +2,9 @@ package com.hkngtech.continuoustimer.model.repository
 
 import android.content.Context
 import android.util.Log
-import com.hkngtech.continuoustimer.data.local.DatabaseC
-import com.hkngtech.continuoustimer.data.local.entity.TimeTData
-import com.hkngtech.continuoustimer.data.local.entity.TimeTtaskData
+import com.hkngtech.continuoustimer.data.local.room.DatabaseC
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTData
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 
 class TimeTableRepository(val context : Context) {
 

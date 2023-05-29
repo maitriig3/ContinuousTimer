@@ -11,7 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.hkngtech.continuoustimer.R
 import com.hkngtech.continuoustimer.adapter.TableTaskRA
-import com.hkngtech.continuoustimer.data.local.entity.TimeTtaskData
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 import com.hkngtech.continuoustimer.databinding.FragmentViewTimeTableBinding
 import com.hkngtech.continuoustimer.model.factory.TimeTableVMF
 import com.hkngtech.continuoustimer.model.repository.TimeTableRepository

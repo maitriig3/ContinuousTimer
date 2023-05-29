@@ -7,8 +7,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
-import com.hkngtech.continuoustimer.data.local.DatabaseC
-import com.hkngtech.continuoustimer.data.local.entity.TimeTtaskData
+import com.hkngtech.continuoustimer.data.local.room.DatabaseC
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 import com.hkngtech.continuoustimer.databinding.AddTaskDisplayBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope

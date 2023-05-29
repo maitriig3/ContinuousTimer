@@ -1,4 +1,4 @@
-package com.hkngtech.continuoustimer.data.local.entity
+package com.hkngtech.continuoustimer.data.local.room.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

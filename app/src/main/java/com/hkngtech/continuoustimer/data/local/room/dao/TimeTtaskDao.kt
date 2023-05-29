@@ -1,9 +1,9 @@
-package com.hkngtech.continuoustimer.data.local.dao
+package com.hkngtech.continuoustimer.data.local.room.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.hkngtech.continuoustimer.data.local.entity.TimeTtaskData
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 
 @Dao
 interface TimeTtaskDao {

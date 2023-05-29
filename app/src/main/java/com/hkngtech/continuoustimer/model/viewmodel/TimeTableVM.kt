@@ -1,7 +1,7 @@
 package com.hkngtech.continuoustimer.model.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.hkngtech.continuoustimer.data.local.entity.TimeTData
+import com.hkngtech.continuoustimer.data.local.room.entity.TimeTData
 import com.hkngtech.continuoustimer.model.repository.TimeTableRepository
 
 class TimeTableVM(val timeTableRepository: TimeTableRepository) : ViewModel() {
