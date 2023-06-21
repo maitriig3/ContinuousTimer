@@ -24,6 +24,9 @@
         <action
             android:id="@+id/action_scheduleFragment_to_tasksFragment"
             app:destination="@id/tasksFragment" />
+        <action
+            android:id="@+id/action_scheduleFragment_to_historyFragment"
+            app:destination="@id/historyFragment" />
     </fragment>
     <fragment
         android:id="@+id/tasksFragment"
@@ -31,6 +34,22 @@
         android:label="TasksFragment" >
         <argument
             android:name="schedule_id"
+            app:argType="integer" />
+    </fragment>
+    <fragment
+        android:id="@+id/historyFragment"
+        android:name="com.hkngtech.continuoustimer.ui.history.HistoryFragment"
+        android:label="HistoryFragment" >
+        <action
+            android:id="@+id/action_historyFragment_to_historyDetailsFragment"
+            app:destination="@id/historyDetailsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/historyDetailsFragment"
+        android:name="com.hkngtech.continuoustimer.ui.history.HistoryDetailsFragment"
+        android:label="HistoryDetailsFragment" >
+        <argument
+            android:name="historyId"
             app:argType="integer" />
     </fragment>
 </navigation>

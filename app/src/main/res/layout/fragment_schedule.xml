@@ -15,6 +15,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ImageView
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/ic_history"
+        android:layout_margin="10dp"
+        android:id="@+id/img_history"
+        app:layout_constraintTop_toTopOf="@id/btn_new_schedule"
+        app:layout_constraintEnd_toStartOf="@id/btn_new_schedule"
+        app:layout_constraintBottom_toBottomOf="@id/btn_new_schedule"/>
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_new_schedule"
         android:layout_width="wrap_content"

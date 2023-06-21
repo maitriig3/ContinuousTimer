@@ -19,12 +19,14 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.hkngtech.continuoustimer.R
 import com.hkngtech.continuoustimer.data.local.room.TimerUpdate
+import com.hkngtech.continuoustimer.data.local.room.entity.History
 import com.hkngtech.continuoustimer.data.local.room.entity.Tasks
 import com.hkngtech.continuoustimer.data.local.room.entity.TimeTtaskData
 import com.hkngtech.continuoustimer.data.local.room.repository.RoomRepository
 import com.hkngtech.continuoustimer.model.repository.TimeTableRepository
 import com.hkngtech.continuoustimer.others.Constants
 import com.hkngtech.continuoustimer.utils.LiveDataTimer
+import com.hkngtech.continuoustimer.utils.logE
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +44,7 @@ class CountDownService : Service() {
     lateinit var receiver: BroadcastReceiver
     lateinit var intentAcknowledged: PendingIntent
 
-    var tableid = 0
+    var scheduleId = 0
     var acknowledged = false
 
     /**
@@ -60,7 +62,7 @@ class CountDownService : Service() {
 
             notificationManager = NotificationManagerCompat.from(this)
             startForeground(23, notifcationBuilder!!.build())
-            tableid = intent.getIntExtra("schedule_id",-1)
+            scheduleId = intent.getIntExtra("schedule_id",-1)
             countdown()
 
         }
@@ -71,40 +73,49 @@ class CountDownService : Service() {
         super.onCreate()
         receiver = object : BroadcastReceiver(){
             override fun onReceive(context: Context?, intent: Intent?) {
-
+                acknowledged = true
+                notificationBuilder()
             }
         }
-        val intent = Intent(this,receiver::class.java).apply {
+        val intent = Intent(this,AcknowledgeBroadcast::class.java).apply {
             putExtra(ACKNOWLEDGED,true)
         }
         intentAcknowledged =
-            PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getBroadcast(this, 23, intent, PendingIntent.FLAG_MUTABLE)
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     fun countdown(){
         GlobalScope.launch(Dispatchers.IO) {
-            val taskdata = roomRepository.getAllTasksService(tableid)
+            val taskdata = roomRepository.getAllTasksService(scheduleId)
+            roomRepository.insertHistory(scheduleId)
+            val history = roomRepository.getRecent()
             withContext(Dispatchers.Main){
                 if(taskdata.isNotEmpty()){
-                    countdowneach(taskdata,0,taskdata.size)
+                    countdowneach(taskdata,0,taskdata.size,history)
                 }
             }
         }
     }
 
-    fun countdowneach(taskdata : List<Tasks>, cnt : Int, total : Int){
-        val time = taskdata[cnt].time.toLong() *60 *1000
+    @OptIn(DelicateCoroutinesApi::class)
+    fun countdowneach(taskdata : List<Tasks>, cnt : Int, total : Int, history: History){
+        val time = when(taskdata[cnt].timeUnit){
+            "S" -> taskdata[cnt].time.toLong() *1000
+            "M" -> taskdata[cnt].time.toLong() *60 *1000
+            "H" -> taskdata[cnt].time.toLong() *60 * 60 *1000
+            else -> taskdata[cnt].time.toLong() *60 *1000
+        }
         countDownTimer = object : CountDownTimer(time,1000){
             @SuppressLint("MissingPermission")
             override fun onTick(p0: Long) {
                 Log.e("COUNT",p0.toString())
-//                if(firstInTick){
-//                    firstInTick = false
-//                    notificationBuilder()
-//                    notifcationBuilder?.priority = NotificationCompat.PRIORITY_HIGH
-//                }else
-//                    notifcationBuilder?.priority = NotificationCompat.PRIORITY_DEFAULT
+                if(firstInTick){
+                    firstInTick = false
+                    notificationBuilder()
+                    notifcationBuilder?.priority = NotificationCompat.PRIORITY_HIGH
+                }else
+                    notifcationBuilder?.priority = NotificationCompat.PRIORITY_DEFAULT
                 notifcationBuilder?.setContentTitle(Constants.miltotime(p0))
                 notifcationBuilder?.setContentText(taskdata[cnt].task)
                 notificationManager?.notify(23,notifcationBuilder!!.build())
@@ -134,12 +145,12 @@ class CountDownService : Service() {
                     @SuppressLint("MissingPermission")
                     override fun onTick(p0: Long) {
                         Log.e("COUNT",p0.toString())
-//                        if(firstInTick){
-//                            firstInTick = false
-//                            notificationBuilderWithAction()
-//                            notifcationBuilder?.priority = NotificationCompat.PRIORITY_HIGH
-//                        }else
-//                            notifcationBuilder?.priority = NotificationCompat.PRIORITY_DEFAULT
+                        if(firstInTick){
+                            firstInTick = false
+                            notificationBuilderWithAction()
+                            notifcationBuilder?.priority = NotificationCompat.PRIORITY_HIGH
+                        }else
+                            notifcationBuilder?.priority = NotificationCompat.PRIORITY_DEFAULT
                         if(cnt+1<total) {
                             notifcationBuilder?.setContentTitle(Constants.miltotime(p0))
                             notifcationBuilder?.setContentText("Next Task ${taskdata[cnt + 1].task}")
@@ -164,9 +175,16 @@ class CountDownService : Service() {
                         }catch(e :Exception){
 
                         }
+                        GlobalScope.launch(Dispatchers.IO) {
+                            roomRepository.insertHistoryDetails(history.historyId,scheduleId,taskdata[cnt].tasksId,acknowledged)
+                            acknowledged = false
+                        }
                         if(cnt+1<total){
-                            countdowneach(taskdata,cnt+1,total)
+                            countdowneach(taskdata,cnt+1,total,history)
                         }else{
+                            GlobalScope.launch(Dispatchers.IO) {
+                                roomRepository.updateHistory(history)
+                            }
                             stopSelf()
                         }
                     }
@@ -203,6 +221,15 @@ class CountDownService : Service() {
     companion object{
         const val ACKNOWLEDGED = "acknowledged"
         const val ACKNOWLEDGE = "Acknowledge"
+    }
+
+    inner class AcknowledgeBroadcast : BroadcastReceiver(){
+        override fun onReceive(context: Context?, intent: Intent?) {
+            "BROADCAST RECEIVER".logE()
+            acknowledged = true
+            notificationBuilder()
+        }
+
     }
 
 }

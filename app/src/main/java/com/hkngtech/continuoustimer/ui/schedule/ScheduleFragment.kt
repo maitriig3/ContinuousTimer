@@ -1,6 +1,5 @@
 package com.hkngtech.continuoustimer.ui.schedule
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
@@ -8,14 +7,15 @@ import android.content.Context
 import android.content.Context.POWER_SERVICE
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import android.view.View
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
@@ -27,8 +27,10 @@ import com.hkngtech.continuoustimer.databinding.FragmentScheduleBinding
 import com.hkngtech.continuoustimer.others.Constants
 import com.hkngtech.continuoustimer.ui.base.BaseFragment
 import com.hkngtech.continuoustimer.ui.countdown.CountDownService
+import com.hkngtech.continuoustimer.ui.history.HistoryFragmentDirections
 import com.hkngtech.continuoustimer.ui.schedule.adapter.ScheduleAdapter
 import com.hkngtech.continuoustimer.utils.LiveDataTimer
+import com.hkngtech.continuoustimer.utils.logE
 import com.hkngtech.continuoustimer.utils.navigate
 import com.hkngtech.continuoustimer.utils.toast
 import dagger.hilt.android.AndroidEntryPoint
@@ -45,7 +47,8 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
 
         createNotificationChannel()
 
-        observer = Observer<TimerUpdate> {
+        observer = Observer<TimerUpdate>{
+            "LIVE DATA ${it.time}".logE()
             if (it != null) {
                 val time = it.time
 
@@ -64,6 +67,10 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
             navigate(ScheduleFragmentDirections.actionScheduleFragmentToTasksFragment(-1))
         }
 
+        binding.imgHistory.setOnClickListener {
+            navigate(ScheduleFragmentDirections.actionScheduleFragmentToHistoryFragment())
+        }
+
         lifecycleScope.launchWhenCreated {
             scheduleViewModel.getAll().collectLatest {
                 binding.recViewSchedule.adapter = ScheduleAdapter(it) { which, schedule ->
@@ -74,18 +81,19 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
                             )
                         )
                     } else if (which == 1) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            if (ContextCompat.checkSelfPermission(
-                                    requireContext(),
-                                    Manifest.permission.POST_NOTIFICATIONS
-                                ) == PackageManager.PERMISSION_GRANTED
-                            ) {
-                                startServiceBatterOptimization()
-                            } else {
-                                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        if(scheduleViewModel.serviceIsNotRunning){
+                            if(isIgnoringBatteryOptimization()){
+                                Intent(requireContext(), CountDownService::class.java).apply {
+                                    putExtra("schedule_id", schedule.scheduleId)
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        requireActivity().startForegroundService(this)
+                                    } else
+                                        requireActivity().startService(this)
+                                    scheduleViewModel.serviceIsNotRunning = false
+                                }
                             }
-                        } else {
-                            startServiceBatterOptimization()
+                        }else{
+                            "Timer is running".toast(requireContext())
                         }
                     } else if (which == 2) {
                         lifecycleScope.launchWhenCreated {
@@ -97,45 +105,14 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
         }
     }
 
-    private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                startServiceBatterOptimization()
-            } else {
-
-            }
-        }
-
     override fun onResume() {
         super.onResume()
-        LiveDataTimer.timerUpdate.observe(requireActivity(), observer)
+        LiveDataTimer.timerUpdate.observe(requireActivity(),observer)
     }
 
     override fun onPause() {
         super.onPause()
         LiveDataTimer.timerUpdate.removeObserver(observer)
-    }
-
-    private fun startServiceForCountdown() {
-        if (scheduleViewModel.serviceIsNotRunning) {
-            Intent(requireContext(), CountDownService::class.java).apply {
-                putExtra("schedule_id", scheduleViewModel.scheduleIdCountdown)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    requireActivity().startForegroundService(this)
-                } else requireActivity().startService(this)
-                scheduleViewModel.serviceIsNotRunning = false
-            }
-        } else {
-            "Timer is running".toast(requireContext())
-        }
-    }
-
-    private fun startServiceBatterOptimization() {
-        if (isIgnoringBatteryOptimization()) {
-            startServiceForCountdown()
-        }
     }
 
     private fun createNotificationChannel() {
@@ -162,6 +139,7 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
 //            intent.data = Uri.parse("package:$packageName")
             requireActivity().startActivity(intent)
             false
-        } else true
+        } else
+            true
     }
 }
