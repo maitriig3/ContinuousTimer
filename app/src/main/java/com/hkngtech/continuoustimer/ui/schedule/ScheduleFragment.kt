@@ -1,34 +1,33 @@
 package com.hkngtech.continuoustimer.ui.schedule
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Context.POWER_SERVICE
 import android.content.Intent
-import android.content.IntentFilter
-import android.net.Uri
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
-import android.provider.Settings
-import android.util.Log
 import android.view.View
-import androidx.core.content.ContextCompat.getSystemService
-import androidx.core.content.ContextCompat.startForegroundService
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hkngtech.continuoustimer.R
 import com.hkngtech.continuoustimer.data.local.room.TimerUpdate
 import com.hkngtech.continuoustimer.databinding.FragmentScheduleBinding
 import com.hkngtech.continuoustimer.others.Constants
+import com.hkngtech.continuoustimer.ui.SettingsViewModel
 import com.hkngtech.continuoustimer.ui.base.BaseFragment
 import com.hkngtech.continuoustimer.ui.countdown.CountDownService
-import com.hkngtech.continuoustimer.ui.history.HistoryFragmentDirections
+import com.hkngtech.continuoustimer.ui.guides.batteryOptimization.BatteryOptimizationGuideDialog
+import com.hkngtech.continuoustimer.ui.guides.batteryOptimization.WhyBatteryOptimizationDialog
+import com.hkngtech.continuoustimer.ui.guides.notification.NotificationsGuideDialog
+import com.hkngtech.continuoustimer.ui.guides.notification.WhyAllowNotificationsDialog
 import com.hkngtech.continuoustimer.ui.schedule.adapter.ScheduleAdapter
+import com.hkngtech.continuoustimer.utils.BatteryOptimization
 import com.hkngtech.continuoustimer.utils.LiveDataTimer
 import com.hkngtech.continuoustimer.utils.logE
 import com.hkngtech.continuoustimer.utils.navigate
@@ -37,9 +36,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
-class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleBinding::inflate) {
+class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleBinding::inflate),
+    BatteryOptimizationGuideDialog.GuideInterface, WhyBatteryOptimizationDialog.GuideInterface,
+    NotificationsGuideDialog.GuideInterface, WhyAllowNotificationsDialog.GuideInterface {
 
     private val scheduleViewModel by viewModels<ScheduleViewModel>()
+    private val settingsViewModel by viewModels<SettingsViewModel>()
     lateinit var observer: Observer<TimerUpdate>
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -47,10 +49,12 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
 
         createNotificationChannel()
 
-        observer = Observer<TimerUpdate>{
+        observer = Observer<TimerUpdate> {
             "LIVE DATA ${it.time}".logE()
             if (it != null) {
                 val time = it.time
+                if (it.end)
+                    scheduleViewModel.serviceIsNotRunning = true
 
                 binding.time.text = Constants.miltotime(time.toLong())
 //                    val ms = String.format(Locale.US,
@@ -59,6 +63,7 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
 //                    )
             }
         }
+        askPrerequisites()
 
         binding.recViewSchedule.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
@@ -81,18 +86,16 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
                             )
                         )
                     } else if (which == 1) {
-                        if(scheduleViewModel.serviceIsNotRunning){
-                            if(isIgnoringBatteryOptimization()){
-                                Intent(requireContext(), CountDownService::class.java).apply {
-                                    putExtra("schedule_id", schedule.scheduleId)
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        requireActivity().startForegroundService(this)
-                                    } else
-                                        requireActivity().startService(this)
-                                    scheduleViewModel.serviceIsNotRunning = false
-                                }
+                        if (scheduleViewModel.serviceIsNotRunning) {
+                            Intent(requireContext(), CountDownService::class.java).apply {
+                                putExtra("schedule_id", schedule.scheduleId)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    requireActivity().startForegroundService(this)
+                                } else
+                                    requireActivity().startService(this)
+                                scheduleViewModel.serviceIsNotRunning = false
                             }
-                        }else{
+                        } else {
                             "Timer is running".toast(requireContext())
                         }
                     } else if (which == 2) {
@@ -105,9 +108,28 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
         }
     }
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+
+            } else {
+
+            }
+        }
+
+    private fun askPrerequisites() {
+        if (!BatteryOptimization(requireContext()).isBatteryOptimizationIgnored()) {
+            if (!settingsViewModel.getBatteryOptimization())
+                WhyBatteryOptimizationDialog().show(parentFragmentManager, "1")
+        }
+
+    }
+
     override fun onResume() {
         super.onResume()
-        LiveDataTimer.timerUpdate.observe(requireActivity(),observer)
+        LiveDataTimer.timerUpdate.observe(requireActivity(), observer)
     }
 
     override fun onPause() {
@@ -130,16 +152,39 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
         }
     }
 
-    private fun isIgnoringBatteryOptimization(): Boolean {
-        val intent = Intent()
-        val packageName: String = requireActivity().packageName
-        val pm = requireContext().getSystemService(POWER_SERVICE) as PowerManager
-        return if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-            intent.action = Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
-//            intent.data = Uri.parse("package:$packageName")
-            requireActivity().startActivity(intent)
-            false
-        } else
-            true
+    override fun whyBatteryOptimization(allowed: Boolean) {
+        if (allowed)
+            BatteryOptimizationGuideDialog().show(parentFragmentManager, "2")
     }
+
+    override fun batteryOptimizationGuide(allowed: Boolean) {
+        if (allowed) {
+            BatteryOptimization(requireContext()).goToBatteryOptimizationSettings()
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                if (!settingsViewModel.getAllowNotifications())
+                    WhyAllowNotificationsDialog().show(parentFragmentManager, "3")
+            }
+        }
+
+    }
+
+    override fun whyAllowNotification(allowed: Boolean) {
+        if (allowed)
+            NotificationsGuideDialog().show(parentFragmentManager, "4")
+    }
+
+    override fun notificationGuide(allowed: Boolean) {
+        if (allowed) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+
 }

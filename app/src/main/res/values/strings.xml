@@ -5,10 +5,41 @@
     <string name="channel_description">Time Table Display </string>
     <string name="channel_id">tt</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="dont_ask_again">Don\'t Ask Again</string>
+
+<!--    Battery Optimization-->
+    <string name="why_battery_optimization_title">Ignore Battery Optimization</string>
+    <string name="why_battery_optimization_description">Timer runs in background and system shouldn\'t kill the app that time. But whenever power saving option is set on,system sometimes kills app which results in you losing your timer. So it is recommended to ignore battery optimization</string>
+    <string name="why_battery_optimization_positive">Okay</string>
+    <string name="why_battery_optimization_negative">No, Thanks</string>
+
+    <string name="battery_optimization_guide">
+        Step 1: Choose <b>All</b> Option in Drop down
+        Step 2: Search for <b>Continuous Timer</b> in search option
+        Step 3: Disable battery optimization
+    </string>
+    <string name="battery_optimization_guide_positive">Do Now</string>
+    <string name="battery_optimization_guide_negative">Not now</string>
+
+    <string name="notifications_guide">
+        Press <b>Allow</b>
+    </string>
+    <string name="notifications_guide_positive">Do Now</string>
+    <string name="notifications_guide_negative">Not now</string>
+
+
+<!--    Notifications-->
+    <string name="why_allow_notifications_title">Allow Notifications</string>
+    <string name="why_allow_notifications_description">You\'ll be able to how much time is left from notifications. You can even acknowledge when you have completed that task. Even though you can do exact thing if you open app, won\'t it be easier with notifications? </string>
+    <string name="why_allow_notifications_positive">Okay</string>
+    <string name="why_allow_notifications_negative">No, Thanks</string>
 
     <string-array name="time_unit">
         <item>S</item>
         <item>M</item>
         <item>H</item>
     </string-array>
+
+
+
 </resources>

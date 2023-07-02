@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/txt_title"
+        android:textStyle="bold"
+        android:layout_margin="20dp"
+        android:text="@string/why_battery_optimization_title"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/txt_description"
+        android:layout_margin="20dp"
+        android:text="@string/why_battery_optimization_description"
+        app:layout_constraintTop_toBottomOf="@id/txt_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:id="@+id/img_app_dead"
+        android:layout_marginTop="10dp"
+        android:src="@drawable/ic_timer_dead"
+        app:layout_constraintTop_toBottomOf="@id/txt_description"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/img_user_side_eye"/>
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:id="@+id/img_user_side_eye"
+        android:layout_marginTop="10dp"
+        android:src="@drawable/ic_user_side_eye_left"
+        app:layout_constraintTop_toBottomOf="@id/txt_description"
+        app:layout_constraintStart_toEndOf="@id/img_app_dead"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/dont_ask_again"
+        android:layout_marginEnd="10dp"
+        android:id="@+id/check_box_dont_ask_again"
+        app:layout_constraintTop_toBottomOf="@id/img_user_side_eye"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_positive"
+        android:layout_margin="10dp"
+        android:text="@string/why_battery_optimization_positive"
+        app:layout_constraintTop_toBottomOf="@id/check_box_dont_ask_again"
+        app:layout_constraintStart_toEndOf="@id/btn_negative"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_negative"
+        android:layout_margin="10dp"
+        android:text="@string/why_battery_optimization_negative"
+        app:layout_constraintTop_toBottomOf="@id/check_box_dont_ask_again"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_positive"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -160,7 +160,7 @@ class CountDownService : Service() {
                             notifcationBuilder?.setContentTitle(Constants.miltotime(p0))
                             notifcationBuilder?.setContentText("It's Over! you did it")
                             notificationManager?.notify(23, notifcationBuilder!!.build())
-                            LiveDataTimer.timerUpdate.postValue(TimerUpdate(p0.toString()))
+                            LiveDataTimer.timerUpdate.postValue(TimerUpdate(p0.toString(),true))
                         }
                     }
 
