@@ -1,6 +1,8 @@
 package com.hkngtech.continuoustimer.ui.schedule
 
 import android.Manifest
+import android.app.AlertDialog
+import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -11,12 +13,17 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hkngtech.continuoustimer.R
 import com.hkngtech.continuoustimer.data.local.room.TimerUpdate
+import com.hkngtech.continuoustimer.databinding.DialogBatteryOptimizationGuideBinding
+import com.hkngtech.continuoustimer.databinding.DialogNotificationsGuideBinding
+import com.hkngtech.continuoustimer.databinding.DialogWhyAllowNotificationsBinding
+import com.hkngtech.continuoustimer.databinding.DialogWhyBatteryOptimizationBinding
 import com.hkngtech.continuoustimer.databinding.FragmentScheduleBinding
 import com.hkngtech.continuoustimer.others.Constants
 import com.hkngtech.continuoustimer.ui.SettingsViewModel
@@ -24,7 +31,6 @@ import com.hkngtech.continuoustimer.ui.base.BaseFragment
 import com.hkngtech.continuoustimer.ui.countdown.CountDownService
 import com.hkngtech.continuoustimer.ui.guides.batteryOptimization.BatteryOptimizationGuideDialog
 import com.hkngtech.continuoustimer.ui.guides.batteryOptimization.WhyBatteryOptimizationDialog
-import com.hkngtech.continuoustimer.ui.guides.notification.NotificationsGuideDialog
 import com.hkngtech.continuoustimer.ui.guides.notification.WhyAllowNotificationsDialog
 import com.hkngtech.continuoustimer.ui.schedule.adapter.ScheduleAdapter
 import com.hkngtech.continuoustimer.utils.BatteryOptimization
@@ -36,9 +42,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
-class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleBinding::inflate),
-    BatteryOptimizationGuideDialog.GuideInterface, WhyBatteryOptimizationDialog.GuideInterface,
-    NotificationsGuideDialog.GuideInterface, WhyAllowNotificationsDialog.GuideInterface {
+class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleBinding::inflate) {
 
     private val scheduleViewModel by viewModels<ScheduleViewModel>()
     private val settingsViewModel by viewModels<SettingsViewModel>()
@@ -122,7 +126,7 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
     private fun askPrerequisites() {
         if (!BatteryOptimization(requireContext()).isBatteryOptimizationIgnored()) {
             if (!settingsViewModel.getBatteryOptimization())
-                WhyBatteryOptimizationDialog().show(parentFragmentManager, "1")
+                whyBatteryOptimization()
         }
 
     }
@@ -152,12 +156,44 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
         }
     }
 
-    override fun whyBatteryOptimization(allowed: Boolean) {
-        if (allowed)
-            BatteryOptimizationGuideDialog().show(parentFragmentManager, "2")
+    private fun whyBatteryOptimization() {
+        val binding = DialogWhyBatteryOptimizationBinding.inflate(layoutInflater)
+        val alert = AlertDialog.Builder(requireContext()).setView(binding.root).create()
+        binding.btnPositive.setOnClickListener {
+            settingsViewModel.setBatteryOptimization(binding.checkBoxDontAskAgain.isChecked)
+            whyBatteryOptimization(true)
+            alert.dismiss()
+        }
+
+        binding.btnNegative.setOnClickListener {
+            settingsViewModel.setBatteryOptimization(binding.checkBoxDontAskAgain.isChecked)
+            whyBatteryOptimization(false)
+            alert.dismiss()
+        }
+        alert.show()
     }
 
-    override fun batteryOptimizationGuide(allowed: Boolean) {
+    private fun whyBatteryOptimization(allowed: Boolean) {
+        if (allowed)
+            batteryOptimizationGuideDialog()
+    }
+
+    private fun batteryOptimizationGuideDialog() {
+        val binding = DialogBatteryOptimizationGuideBinding.inflate(layoutInflater)
+        val alert = AlertDialog.Builder(requireContext()).setView(binding.root).create()
+        binding.btnPositive.setOnClickListener {
+            batteryOptimizationGuide(true)
+            alert.dismiss()
+        }
+
+        binding.btnNegative.setOnClickListener {
+            batteryOptimizationGuide(false)
+            alert.dismiss()
+        }
+        alert.show()
+    }
+
+    private fun batteryOptimizationGuide(allowed: Boolean) {
         if (allowed) {
             BatteryOptimization(requireContext()).goToBatteryOptimizationSettings()
         }
@@ -168,18 +204,49 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
                 if (!settingsViewModel.getAllowNotifications())
-                    WhyAllowNotificationsDialog().show(parentFragmentManager, "3")
+                    whyAllowNotification()
             }
         }
 
     }
 
-    override fun whyAllowNotification(allowed: Boolean) {
-        if (allowed)
-            NotificationsGuideDialog().show(parentFragmentManager, "4")
+    private fun whyAllowNotification() {
+        val binding = DialogWhyAllowNotificationsBinding.inflate(layoutInflater)
+        val alert = AlertDialog.Builder(requireContext()).setView(binding.root).create()
+        binding.btnPositive.setOnClickListener {
+            settingsViewModel.setAllowNotifications(binding.checkBoxDontAskAgain.isChecked)
+            whyAllowNotification(true)
+            alert.dismiss()
+        }
+
+        binding.btnNegative.setOnClickListener {
+            settingsViewModel.setAllowNotifications(binding.checkBoxDontAskAgain.isChecked)
+            whyAllowNotification(false)
+            alert.dismiss()
+        }
+        alert.show()
     }
 
-    override fun notificationGuide(allowed: Boolean) {
+    private fun whyAllowNotification(allowed: Boolean) {
+        if (allowed)
+            notificationGuide()
+    }
+
+    private fun notificationGuide() {
+        val binding = DialogNotificationsGuideBinding.inflate(layoutInflater)
+        val alert = AlertDialog.Builder(requireContext()).setView(binding.root).create()
+        binding.btnPositive.setOnClickListener {
+            notificationGuide(true)
+            alert.dismiss()
+        }
+
+        binding.btnNegative.setOnClickListener {
+            notificationGuide(false)
+            alert.dismiss()
+        }
+    }
+
+    private fun notificationGuide(allowed: Boolean) {
         if (allowed) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)

@@ -13,12 +13,12 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class WhyBatteryOptimizationDialog: DialogFragment() {
 
-    private lateinit var guideInterface: GuideInterface
+    private var guideInterface: GuideInterface? = null
     private val settingsViewModel by viewModels<SettingsViewModel>()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        guideInterface = parentFragment as GuideInterface
+        guideInterface = parentFragment?.requireContext() as GuideInterface
     }
 
 
@@ -28,13 +28,13 @@ class WhyBatteryOptimizationDialog: DialogFragment() {
 
         binding.btnPositive.setOnClickListener {
             settingsViewModel.setBatteryOptimization(binding.checkBoxDontAskAgain.isChecked)
-            guideInterface.whyBatteryOptimization(true)
+            guideInterface?.whyBatteryOptimization(true)
             dismiss()
         }
 
         binding.btnNegative.setOnClickListener {
             settingsViewModel.setBatteryOptimization(binding.checkBoxDontAskAgain.isChecked)
-            guideInterface.whyBatteryOptimization(false)
+            guideInterface?.whyBatteryOptimization(false)
             dismiss()
         }
 
