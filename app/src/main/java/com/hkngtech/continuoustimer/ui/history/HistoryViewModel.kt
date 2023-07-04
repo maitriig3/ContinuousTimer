@@ -14,6 +14,9 @@ class HistoryViewModel @Inject constructor(private val roomRepository: RoomRepos
     var addedTimeFilter = false
     var ascFilter = false
 
+    var scheduleId = -1
+    var historyId = -1
+
     fun getHistory() = flow {
         roomRepository.getHistory().collect{ historyList ->
             if(dateFilter.isEmpty()){
@@ -27,8 +30,8 @@ class HistoryViewModel @Inject constructor(private val roomRepository: RoomRepos
     }
 
 
-    fun getHistoryDetails(historyId: Int) = flow {
-        roomRepository.getHistoryDetails(historyId).collect{ historyDetailsList ->
+    fun getHistoryDetails() = flow {
+        roomRepository.getHistoryDetails(scheduleId,historyId).collect{ historyDetailsList ->
             if(dateFilter.isEmpty()){
                 if(ascFilter){
                     emit(historyDetailsList.sortedBy { it.addedTime})

@@ -6,6 +6,8 @@ import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import com.hkngtech.continuoustimer.databinding.DialogNotificationsGuideBinding
+import com.hkngtech.continuoustimer.ui.guides.GuideInterface
+import com.hkngtech.continuoustimer.ui.guides.batteryOptimization.WhyBatteryOptimizationDialog
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -15,7 +17,7 @@ class NotificationsGuideDialog: DialogFragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        guideInterface = parentFragment as GuideInterface
+        guideInterface = requireParentFragment().childFragmentManager.fragments[0] as GuideInterface
     }
 
 
@@ -35,12 +37,6 @@ class NotificationsGuideDialog: DialogFragment() {
 
 
         return AlertDialog.Builder(requireContext()).setView(binding.root).create()
-    }
-
-    interface GuideInterface {
-
-        fun notificationGuide(allowed: Boolean)
-
     }
 
 

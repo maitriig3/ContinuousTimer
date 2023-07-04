@@ -8,17 +8,18 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import com.hkngtech.continuoustimer.databinding.DialogWhyBatteryOptimizationBinding
 import com.hkngtech.continuoustimer.ui.SettingsViewModel
+import com.hkngtech.continuoustimer.ui.guides.GuideInterface
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class WhyBatteryOptimizationDialog: DialogFragment() {
 
-    private var guideInterface: GuideInterface? = null
+    private lateinit var guideInterface: GuideInterface
     private val settingsViewModel by viewModels<SettingsViewModel>()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        guideInterface = parentFragment?.requireContext() as GuideInterface
+        guideInterface = requireParentFragment().childFragmentManager.fragments[0] as GuideInterface
     }
 
 
@@ -28,26 +29,18 @@ class WhyBatteryOptimizationDialog: DialogFragment() {
 
         binding.btnPositive.setOnClickListener {
             settingsViewModel.setBatteryOptimization(binding.checkBoxDontAskAgain.isChecked)
-            guideInterface?.whyBatteryOptimization(true)
+            guideInterface.whyBatteryOptimization(true)
             dismiss()
         }
 
         binding.btnNegative.setOnClickListener {
             settingsViewModel.setBatteryOptimization(binding.checkBoxDontAskAgain.isChecked)
-            guideInterface?.whyBatteryOptimization(false)
+            guideInterface.whyBatteryOptimization(false)
             dismiss()
         }
 
 
         return AlertDialog.Builder(requireContext()).setView(binding.root).create()
     }
-
-    interface GuideInterface {
-
-        fun whyBatteryOptimization(allowed: Boolean)
-
-    }
-
-
 
 }

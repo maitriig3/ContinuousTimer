@@ -53,17 +53,29 @@ class RoomRepository(private val databaseC: DatabaseC) {
         )
     }
 
-    suspend fun getRecent() = databaseC.historyDao().getRecent()
+    suspend fun getRecentHistory() = databaseC.historyDao().getRecent()
+    private suspend fun getRecentHistoryDetails() = databaseC.historyDetailsDao().getRecent()
 
     suspend fun insertHistoryDetails(historyId: Int,scheduleId: Int,taskId: Int,acknowledged: Boolean) = databaseC.historyDetailsDao().insert(
         HistoryDetails(
-        0, historyId, scheduleId, taskId, acknowledged, getTimeInMillis()
+        0, historyId, scheduleId, taskId, acknowledged, getTimeInMillis(), getTimeInMillis()
+        )
     )
-    )
+
+    suspend fun updateHistoryDetails(){
+        val historyDetails = getRecentHistoryDetails()
+        databaseC.historyDetailsDao().update(
+            HistoryDetails(
+                historyDetails.historyDetailId,historyDetails.historyId,historyDetails.scheduleId,historyDetails.taskId,
+                true,historyDetails.addedTime,
+                getTimeInMillis()
+            )
+        )
+    }
 
     fun getHistory() = databaseC.historyDao().getAll()
 
-    fun getHistoryDetails(historyId: Int) = databaseC.historyDetailsDao().getAll(historyId)
+    fun getHistoryDetails(scheduleId: Int,historyId: Int) = databaseC.historyDetailsDao().getAll(scheduleId,historyId)
 
 
 }

@@ -11,6 +11,7 @@ import com.hkngtech.continuoustimer.databinding.FragmentHistoryDetailsBinding
 import com.hkngtech.continuoustimer.ui.base.BaseFragment
 import com.hkngtech.continuoustimer.ui.history.adapter.HistoryAdapter
 import com.hkngtech.continuoustimer.ui.history.adapter.HistoryDetailsAdapter
+import com.hkngtech.continuoustimer.utils.logE
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 
@@ -23,11 +24,15 @@ class HistoryDetailsFragment : BaseFragment<FragmentHistoryDetailsBinding>(Fragm
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        historyViewModel.historyId = args.historyId
+        historyViewModel.scheduleId = args.scheduleId
+
         binding.recViewHistoryDetails.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
 
         lifecycleScope.launchWhenCreated {
-            historyViewModel.getHistoryDetails(args.historyId).collectLatest {
+            historyViewModel.getHistoryDetails().collectLatest {
+                it.toString().logE()
                 binding.recViewHistoryDetails.adapter = HistoryDetailsAdapter(it) { which, historyDetailsTask ->
 
 

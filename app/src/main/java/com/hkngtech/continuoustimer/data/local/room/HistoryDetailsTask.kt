@@ -4,15 +4,17 @@ import androidx.room.ColumnInfo
 
 data class HistoryDetailsTask(
     @ColumnInfo("history_detail_id")
-    val historyDetailId: Int,
+    val historyDetailId: Int?,
     @ColumnInfo("history_id")
-    val historyId: Int,
+    val historyId: Int?,
     @ColumnInfo("schedule_id")
-    val scheduleId: Int,
+    val scheduleId: Int?,
     @ColumnInfo("task_id")
-    val taskId: Int,
-    val task: String,
-    val acknowledged: Boolean,
+    val taskId: Int?,
+    @ColumnInfo("task")
+    val task: String?,
+    @ColumnInfo("acknowledged")
+    val acknowledged: Boolean?,
     @ColumnInfo("added_time")
-    val addedTime: Long
+    val addedTime: Long?
 )
