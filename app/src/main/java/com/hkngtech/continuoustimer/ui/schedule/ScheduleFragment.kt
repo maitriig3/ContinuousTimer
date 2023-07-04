@@ -22,6 +22,7 @@ import com.hkngtech.continuoustimer.others.Constants
 import com.hkngtech.continuoustimer.ui.SettingsViewModel
 import com.hkngtech.continuoustimer.ui.base.BaseFragment
 import com.hkngtech.continuoustimer.ui.countdown.CountDownService
+import com.hkngtech.continuoustimer.ui.guides.GuideInterface
 import com.hkngtech.continuoustimer.ui.guides.batteryOptimization.BatteryOptimizationGuideDialog
 import com.hkngtech.continuoustimer.ui.guides.batteryOptimization.WhyBatteryOptimizationDialog
 import com.hkngtech.continuoustimer.ui.guides.notification.NotificationsGuideDialog
@@ -37,8 +38,7 @@ import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
 class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleBinding::inflate),
-    BatteryOptimizationGuideDialog.GuideInterface, WhyBatteryOptimizationDialog.GuideInterface,
-    NotificationsGuideDialog.GuideInterface, WhyAllowNotificationsDialog.GuideInterface {
+    GuideInterface {
 
     private val scheduleViewModel by viewModels<ScheduleViewModel>()
     private val settingsViewModel by viewModels<SettingsViewModel>()
@@ -123,6 +123,10 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
         if (!BatteryOptimization(requireContext()).isBatteryOptimizationIgnored()) {
             if (!settingsViewModel.getBatteryOptimization())
                 WhyBatteryOptimizationDialog().show(parentFragmentManager, "1")
+            else
+                callWhyAllowNotification()
+        }else{
+            callWhyAllowNotification()
         }
 
     }
@@ -152,25 +156,31 @@ class ScheduleFragment : BaseFragment<FragmentScheduleBinding>(FragmentScheduleB
         }
     }
 
+    private fun callWhyAllowNotification(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                if (!settingsViewModel.getAllowNotifications())
+                    WhyAllowNotificationsDialog().show(parentFragmentManager, "3")
+            }
+        }
+    }
+
     override fun whyBatteryOptimization(allowed: Boolean) {
         if (allowed)
             BatteryOptimizationGuideDialog().show(parentFragmentManager, "2")
+        else
+            callWhyAllowNotification()
     }
 
     override fun batteryOptimizationGuide(allowed: Boolean) {
         if (allowed) {
             BatteryOptimization(requireContext()).goToBatteryOptimizationSettings()
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                if (!settingsViewModel.getAllowNotifications())
-                    WhyAllowNotificationsDialog().show(parentFragmentManager, "3")
-            }
-        }
+        callWhyAllowNotification()
 
     }
 

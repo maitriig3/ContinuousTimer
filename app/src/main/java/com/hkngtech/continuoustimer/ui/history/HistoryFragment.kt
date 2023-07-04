@@ -26,7 +26,7 @@ class HistoryFragment : BaseFragment<FragmentHistoryBinding>(FragmentHistoryBind
         lifecycleScope.launchWhenCreated {
             historyViewModel.getHistory().collectLatest {
                 binding.recViewHistory.adapter = HistoryAdapter(it) { which, historySchedule ->
-                    navigate(HistoryFragmentDirections.actionHistoryFragmentToHistoryDetailsFragment(historySchedule.historyId))
+                    navigate(HistoryFragmentDirections.actionHistoryFragmentToHistoryDetailsFragment(historySchedule.historyId,historySchedule.scheduleId))
                 }
             }
         }

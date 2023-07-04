@@ -6,16 +6,17 @@ import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import com.hkngtech.continuoustimer.databinding.DialogBatteryOptimizationGuideBinding
+import com.hkngtech.continuoustimer.ui.guides.GuideInterface
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class BatteryOptimizationGuideDialog: DialogFragment() {
 
-    private var guideInterface: GuideInterface? = null
+    private lateinit var guideInterface: GuideInterface
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        guideInterface = parentFragment?.activity as GuideInterface
+        guideInterface = requireParentFragment().childFragmentManager.fragments[0] as GuideInterface
     }
 
 
@@ -24,23 +25,17 @@ class BatteryOptimizationGuideDialog: DialogFragment() {
         val binding = DialogBatteryOptimizationGuideBinding.inflate(layoutInflater)
 
         binding.btnPositive.setOnClickListener {
-            guideInterface?.batteryOptimizationGuide(true)
+            guideInterface.batteryOptimizationGuide(true)
             dismiss()
         }
 
         binding.btnNegative.setOnClickListener {
-            guideInterface?.batteryOptimizationGuide(false)
+            guideInterface.batteryOptimizationGuide(false)
             dismiss()
         }
 
 
         return AlertDialog.Builder(requireContext()).setView(binding.root).create()
-    }
-
-    interface GuideInterface {
-
-        fun batteryOptimizationGuide(allowed: Boolean)
-
     }
 
 

@@ -51,5 +51,8 @@
         <argument
             android:name="historyId"
             app:argType="integer" />
+        <argument
+            android:name="scheduleId"
+            app:argType="integer" />
     </fragment>
 </navigation>

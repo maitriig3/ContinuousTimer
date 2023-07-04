@@ -8,6 +8,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import com.hkngtech.continuoustimer.databinding.DialogWhyBatteryOptimizationBinding
 import com.hkngtech.continuoustimer.ui.SettingsViewModel
+import com.hkngtech.continuoustimer.ui.guides.GuideInterface
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -18,7 +19,7 @@ class WhyBatteryOptimizationDialog: DialogFragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        guideInterface = parentFragment as GuideInterface
+        guideInterface = requireParentFragment().childFragmentManager.fragments[0] as GuideInterface
     }
 
 
@@ -41,13 +42,5 @@ class WhyBatteryOptimizationDialog: DialogFragment() {
 
         return AlertDialog.Builder(requireContext()).setView(binding.root).create()
     }
-
-    interface GuideInterface {
-
-        fun whyBatteryOptimization(allowed: Boolean)
-
-    }
-
-
 
 }

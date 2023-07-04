@@ -38,10 +38,26 @@ class HistoryDetailsAdapter(var historyDetailsTask: List<HistoryDetailsTask>, va
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         with(holder.binding) {
             txtTask.text = historyDetailsTask[position].task
-            imgApp.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_timer_alive,null
-            ))
-            imgUser.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_user_alive,null
-            ))
+            if(historyDetailsTask[position].acknowledged == null){
+                imgApp.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_timer_dead,null
+                ))
+                imgUser.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_user_side_eye_left,null
+                ))
+            }else{
+                historyDetailsTask[position].acknowledged?.let {
+                    if(it){
+                        imgApp.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_timer_alive,null
+                        ))
+                        imgUser.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_user_alive,null
+                        ))
+                    }else{
+                        imgApp.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_timer_side_eye_right,null
+                        ))
+                        imgUser.setImageDrawable(ResourcesCompat.getDrawable(root.resources, R.drawable.ic_user_dead,null
+                        ))
+                    }
+                }
+            }
         }
     }
 

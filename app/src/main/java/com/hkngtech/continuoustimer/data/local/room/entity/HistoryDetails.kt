@@ -18,6 +18,8 @@ data class HistoryDetails(
     @ColumnInfo("acknowledged")
     val acknowledged: Boolean,
     @ColumnInfo(name = "added_time")
-    val addedTime: Long
+    val addedTime: Long,
+    @ColumnInfo(name = "updated_time")
+    val updatedTime: Long
 
 )
